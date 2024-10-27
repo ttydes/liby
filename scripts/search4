@@ -1,0 +1,27 @@
+#!/bin/sh
+
+key="$1"
+subkey="$2"
+query="$3"
+
+ndb="../data/ndb/elvi.ndb"
+value="$(ndbquery -f "$ndb" key "$key" "$subkey")"
+
+main(){
+
+    if [ "$#" -lt 3 ]; then
+	echo "Usage: $0 <key> <subkey> <query>"
+	exit 1
+    fi
+
+    if [ -n "$value" ]; then
+	url=$(echo "$value" | awk -v q="$query" '{gsub(/\{\*\}/, q); print}')
+	#echo "$url"
+	$BROWSER $url
+    else
+	echo "Key not found or query not supported."
+	exit 1
+    fi
+}
+main $@
+

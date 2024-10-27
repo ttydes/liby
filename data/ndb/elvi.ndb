@@ -1,0 +1,8 @@
+key=pkgs
+	go=https://pkg.go.dev/search?q={*}
+	cs="dotnet package search {*}
+
+key=access
+	overview=https://audacia.co.uk/blog/accessibility-in-software-development
+	wcag=https://www.w3.org/TR/WCAG21/#{*}
+

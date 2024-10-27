@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package accountpb;
+option go_package = "./protogen/accountpb;accountpb";
+#option go_package = "google.golang.org/grpc/examples/route_guide/routeguide";
+
+enum Operation {
+    CREATE = 0;
+    UPDATE = 1;
+}
+
+message MkAccountReq {
+    Operation operation = 1;
+    string id = 2;
+    string fname = 3;
+    int32  dob = 4;
+}
+
+message MkAccountResp {
+    string id = 1;
+}
+
+message GetAccountReq {
+    string id = 1;
+}
+
+message GetAccountResp {
+    string id = 1;
+    string fname = 2;
+    int32  dob = 3;
+}
+
+message UpdateAccountReq {
+    string id = 1;
+    string fname = 2;
+    int32  dob = 3;
+}
+
+message UpdateAccountResp {}
+
+message DeleteAccountReq {
+    string id = 1;
+}
+
+message DeleteAccountResp {}
+
+service AccountService {
+    rpc MkAccount(MkAccountReq)         returns (MkAccountResp) {};
+    rpc GetAccount(GetAccountReq)       returns (GetAccountResp) {};
+    rpc UpdateAccount(UpdateAccountReq) returns (UpdateAccountResp) {};
+    rpc DeleteAccount(DeleteAccountReq) returns (DeleteAccountResp) {};
+}

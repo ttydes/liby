@@ -1,0 +1,76 @@
+#!/bin/sh
+
+main(){
+    ODIR=certs
+
+    # make if not exists
+    mkdir -p $ODIR
+    cd $ODIR
+
+    # delete if pre-existing 
+    rm -f *.pem *.conf
+
+    CA_SUBJ="/C=GB/ST=BRITAIN/L=SHEFFIELD/O=HALLAMSTD/OU=LIBY/CN=CA.tydes.net/emailAddress=ca@tydes.net"
+    SERVER_SUBJ="/C=GB/ST=BRITAIN/L=SHEFFIELD/O=HALLAMSTD/OU=LIBY/CN=*.tydes.net/emailAddress=tael@tydes.net"
+    CLIENT_SUBJ="/C=GB/ST=BRITAIN/L=SHEFFIELD/O=HALLAMSTD/OU=LIBY/CN=client.tydes.net/emailAddress=client@tydes.net"
+
+    register "$CA_SUBJ"
+    generate-key-n-CSR "$SERVER_SUBJ"
+    mk-config
+    self-sign
+    gen-client-keys "$CLIENT_SUBJ"
+    verify-certs
+    sign-client-request
+}
+
+register(){
+    CA_SUBJ=$1
+    # register certs
+    openssl req -x509 -newkey rsa:4096 -nodes -days 365 -keyout ca-key.pem -out ca-cert.pem -subj "$CA_SUBJ"
+
+    # display cert for validation
+    openssl x509 -in ca-cert.pem -noout -text 
+}
+
+generate-key-n-CSR(){
+    SERVER_SUBJ=$1
+    # generate server key and CSR
+    openssl req -newkey rsa:4096 -nodes -keyout server-key.pem -out server-req.pem -subj "$SERVER_SUBJ"
+}
+
+mk-config(){
+    # create config file for local testing
+    echo "subjectAltName=DNS:localhost,IP:127.0.0.1" > server-ext.conf
+    echo "subjectAltName=DNS:localhost,IP:127.0.0.1" > client-ext.conf
+}
+
+self-sign(){
+    # check if CA certificate exists
+    if [ ! -f ca-cert.pem ]; then
+        echo "CA certificate not found. Exiting."
+        exit 1
+    fi
+
+    openssl x509 -req -in server-req.pem -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out server-cert.pem -days 365 -extfile server-ext.conf
+}
+
+gen-client-keys(){
+    CLIENT_SUBJ=$1
+    openssl req -newkey rsa:4096 -nodes -keyout client-key.pem -out client-req.pem -subj "$CLIENT_SUBJ"
+}
+
+verify-certs(){
+    openssl verify -CAfile ca-cert.pem server-cert.pem
+}
+
+sign-client-request(){
+    # check if CA certificate exists
+    if [ ! -f ca-cert.pem ]; then
+        echo "CA certificate not found. Exiting."
+        exit 1
+    fi
+
+    openssl x509 -req -in client-req.pem -days 60 -CA ca-cert.pem -CAkey ca-key.pem -CAcreateserial -out client-cert.pem -extfile client-ext.conf
+}
+
+main

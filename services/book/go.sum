@@ -1,0 +1,4 @@
+github.com/golang/protobuf v1.5.0 h1:LUVKkCeviFUMKqHa4tXIIij/lbhnMbP7Fn5wKdKkRh4=
+github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
+github.com/ttydes/liby v0.0.0-20241028002258-d6e73721902d h1:Hfnki+dOYvlnfLB1FkrcmGWg9n5S72wwM5GeCsguGII=
+github.com/ttydes/liby v0.0.0-20241028002258-d6e73721902d/go.mod h1:vqFNLQmn99btRzO3Y9udEux5SVFu9M4MD5hswtaSoDc=
