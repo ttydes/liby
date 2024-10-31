@@ -1,0 +1,67 @@
+#!/bin/sh
+
+deps(){
+    go install github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    go get golang.org/x/net/http2
+}
+
+proto(){
+    protoc --go_out=. --go-grpc_out=. ./protogen/branch.proto
+}
+
+setenvs(){
+    export DB_USER=tydes
+    export DB_PASS=pass
+    export DB_HOST=localhost:5432
+    export DB_NAME=lms_branches
+    export DB_PORT=5432
+    export DB_STRING="postgresql://tydes:pass@localhost:5432/lms_branches"
+}
+
+hit(){
+    ./hit create
+    ./hit get
+    ./hit update 
+    ./hit delete
+}
+
+
+dbinit() {
+   # Attempt to connect to the database
+    if psql "$DB_STRING" -c "\q" > /dev/null 2>&1; then
+        echo "Database $DB_NAME already exists."
+    else
+        -- Create the database if not exists
+        echo "Database $DB_NAME does not exist. Creating it..."
+        createdb "$DB_NAME"
+    fi
+
+     # Connect to the database for init
+    psql "$DB_STRING" <<EOF
+    -- delete if already exists
+    DROP TABLE IF EXISTS branches;
+    -- Create the branches table
+    CREATE TABLE IF NOT EXISTS branches (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        city TEXT NOT NULL,
+        postcode TEXT NOT NULL,
+        country TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE (name, address, postcode)
+    );
+
+    -- Grant necessary permissions
+    GRANT CREATE ON SCHEMA public TO "$DB_USER";
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "$DB_USER";
+EOF
+}
+
+run() {   
+    go run server.go
+}
+
+setenvs
+$1

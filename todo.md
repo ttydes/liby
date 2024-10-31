@@ -1,14 +1,19 @@
 # TODO List for ticket making
 
 ## Gateway Integration
-- [ ] Establish connection with the gateway.
+- [ ] Set up gateway.
 
 ## Frontend Development
 - [ ] Create a basic HTMX page.
   - [ ] Patch the HTMX library as it has not been merged yet.
 - [ ] Demonstrate asynchronous and synchronous rendering by streaming data to the frontend.
-*example of grpc + htmx. simples:*
-*https://github.com/vildan-valeev/golang-htmx-grpc/blob/main/index.html#L13
+  - [ ] (literally just write the word stream on the protofile service. trivial. we want this for media.)
+
+####*example of grpc + htmx. simples:*
+#####*https://github.com/vildan-valeev/golang-htmx-grpc/blob/main/index.html#L13
+
+####*example of alternate. htmx bindings: (it'll produce normal html in browser anyway so can revert.)*
+#####https://github.com/rajasegar/ccl-demo-raja/blob/main/views/home.lisp
 
 ## Monitoring & Metrics
 - [ ] Implement Prometheus for metrics collection and notifications via push.

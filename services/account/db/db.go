@@ -21,6 +21,23 @@ type Account struct {
 	CreatedAt time.Time
 }
 
+func GetAccount(ctx context.Context, db *pgxpool.Pool, req *pb.GetAccountReq) (*pb.GetAccountResp, error) {
+	query := `
+		SELECT id, fname, dob
+		FROM accounts
+		WHERE id = $1;
+	`
+	var resp pb.GetAccountResp
+	err := db.QueryRow(ctx, query, req.Id).Scan(&resp.Id, &resp.Fname, &resp.Dob)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("User with ID %s not found", req.Id)
+		}
+		return nil, fmt.Errorf("Failed to get user: %w", err)
+	}
+	return &resp, nil
+}
+
 func MkAccount(ctx context.Context, db *pgxpool.Pool, req *pb.MkAccountReq) (*pb.MkAccountResp, error) {
 	query := `
 		INSERT INTO accounts (id, fname, dob)
@@ -61,24 +78,6 @@ func DeleteAccount(ctx context.Context, db *pgxpool.Pool, req *pb.DeleteAccountR
 	}
 
 	return &pb.DeleteAccountResp{}, nil
-}
-
-func GetAccount(ctx context.Context, db *pgxpool.Pool, req *pb.GetAccountReq) (*pb.GetAccountResp, error) {
-	query := `
-		SELECT id, fname, dob
-		FROM accounts
-		WHERE id = $1;
-	`
-	var resp pb.GetAccountResp
-	err := db.QueryRow(ctx, query, req.Id).Scan(&resp.Id, &resp.Fname, &resp.Dob)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("User with ID %s not found", req.Id)
-		}
-		return nil, fmt.Errorf("Failed to get user: %w", err)
-	}
-
-	return &resp, nil
 }
 
 func MkClient(ctx context.Context) (*pgxpool.Pool, error) {

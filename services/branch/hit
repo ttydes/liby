@@ -1,0 +1,55 @@
+#!/bin/sh
+
+tls="../../certs"
+pb="protogen/branch.proto"
+port="8002"
+
+list(){
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" describe
+}
+
+create() {
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" \
+        -d '{
+                "name": "Main Branch",
+                "address": "123 Main St",
+                "city": "New York",
+                "postcode": "10001",
+                "country": "USA"
+        }' localhost:$port branchpb.BranchService/MkBranch
+}
+
+get() {
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" \
+        -d '{"id": 1}' localhost:$port branchpb.BranchService/GetBranch
+}
+
+update() {
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" \
+        -d '{
+            "id": 1,
+            "name": "bla",
+            "city": "somewhere",
+            "postcode": "00000",
+            "country": "somewhereelse"
+        }' localhost:$port branchpb.BranchService/UpdateBranch
+}
+
+delete() {
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" \
+        -d '{"id": 1 }' localhost:$port branchpb.BranchService/DeleteBranch
+}
+
+run() {
+    setenvs
+    go run server.go
+}
+
+# Check if a command is provided
+if [ -z "$1" ]; then
+    echo "Usage: $0 {create|get|update|delete|run}"
+    exit 1
+fi
+
+# Execute the command
+"$@"
