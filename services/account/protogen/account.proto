@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package accountpb;
 option go_package = "./protogen/accountpb;accountpb";
-#option go_package = "google.golang.org/grpc/examples/route_guide/routeguide";
 
 enum Operation {
     CREATE = 0;

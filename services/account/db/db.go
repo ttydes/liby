@@ -1,7 +1,5 @@
 package account
 
-// package github.com/ttydes/liby/services/account/protogen
-
 import (
 	"context"
 	"database/sql"
@@ -11,7 +9,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 
 	pb "github.com/ttydes/liby/services/account/protogen"
@@ -24,53 +21,28 @@ type Account struct {
 	CreatedAt time.Time
 }
 
-const (
-	insertUserQuery = `
+func MkAccount(ctx context.Context, db *pgxpool.Pool, req *pb.MkAccountReq) (*pb.MkAccountResp, error) {
+	query := `
 		INSERT INTO accounts (id, fname, dob)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (id) DO UPDATE
 		SET fname = EXCLUDED.fname, dob = EXCLUDED.dob;
 	`
-
-	updateUserQuery = `
-		UPDATE accounts
-		SET fname = $2, dob = $3
-		WHERE id = $1;
-	`
-
-	deleteUserQuery = `
-		DELETE FROM accounts
-		WHERE id = $1;
-	`
-
-	getUserQuery = `
-		SELECT id, fname, dob
-		FROM accounts
-		WHERE id = $1;
-	`
-)
-
-func MkAccount(ctx context.Context, db *sqlx.DB, req *pb.MkAccountReq) (*pb.MkAccountResp, error) {
-	switch req.Operation {
-	case pb.Operation_CREATE:
-		_, err := db.ExecContext(ctx, insertUserQuery, req.Id, req.Fname, req.Dob)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to create user: %w", err)
-		}
-	case pb.Operation_UPDATE:
-		_, err := db.ExecContext(ctx, updateUserQuery, req.Id, req.Fname, req.Dob)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to update user: %w", err)
-		}
-	default:
-		return nil, errors.New("Invalid operation")
+	_, err := db.Exec(ctx, query, req.Id, req.Fname, req.Dob)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create user: %w", err)
 	}
 
 	return &pb.MkAccountResp{Id: req.Id}, nil
 }
 
-func UpdateAccount(ctx context.Context, db *sqlx.DB, req *pb.UpdateAccountReq) (*pb.UpdateAccountResp, error) {
-	_, err := db.ExecContext(ctx, updateUserQuery, req.Id, req.Fname, req.Dob)
+func UpdateAccount(ctx context.Context, db *pgxpool.Pool, req *pb.UpdateAccountReq) (*pb.UpdateAccountResp, error) {
+	query := `
+		UPDATE accounts
+		SET fname = $2, dob = $3
+		WHERE id = $1;
+	`
+	_, err := db.Exec(ctx, query, req.Id, req.Fname, req.Dob)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to update user: %w", err)
 	}
@@ -78,8 +50,12 @@ func UpdateAccount(ctx context.Context, db *sqlx.DB, req *pb.UpdateAccountReq) (
 	return &pb.UpdateAccountResp{}, nil
 }
 
-func DeleteAccount(ctx context.Context, db *sqlx.DB, req *pb.DeleteAccountReq) (*pb.DeleteAccountResp, error) {
-	_, err := db.ExecContext(ctx, deleteUserQuery, req.Id)
+func DeleteAccount(ctx context.Context, db *pgxpool.Pool, req *pb.DeleteAccountReq) (*pb.DeleteAccountResp, error) {
+	query := `
+		DELETE FROM accounts
+		WHERE id = $1;
+	`
+	_, err := db.Exec(ctx, query, req.Id)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to delete user: %w", err)
 	}
@@ -87,9 +63,14 @@ func DeleteAccount(ctx context.Context, db *sqlx.DB, req *pb.DeleteAccountReq) (
 	return &pb.DeleteAccountResp{}, nil
 }
 
-func GetAccount(ctx context.Context, db *sqlx.DB, req *pb.GetAccountReq) (*pb.GetAccountResp, error) {
+func GetAccount(ctx context.Context, db *pgxpool.Pool, req *pb.GetAccountReq) (*pb.GetAccountResp, error) {
+	query := `
+		SELECT id, fname, dob
+		FROM accounts
+		WHERE id = $1;
+	`
 	var resp pb.GetAccountResp
-	err := db.GetContext(ctx, &resp, getUserQuery, req.Id)
+	err := db.QueryRow(ctx, query, req.Id).Scan(&resp.Id, &resp.Fname, &resp.Dob)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("User with ID %s not found", req.Id)
@@ -109,15 +90,14 @@ func MkClient(ctx context.Context) (*pgxpool.Pool, error) {
 	if err := ValidateEnvs(name, host, user, pass); err != nil {
 		return nil, err
 	}
-	// url := "postgres://tydes:pass@localhost:5432/lms_accounts"
 	url := fmt.Sprintf("postgres://%s:%s@%s/%s", user, pass, host, name)
-	client, err := pgxpool.Connect(ctx, url)
 
+	db, err := pgxpool.Connect(ctx, url)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to %s", err)
+		return nil, fmt.Errorf("Failed to connect to database: %w", err)
 	}
 
-	return client, nil
+	return db, nil
 }
 
 func ValidateEnvs(envs ...string) error {

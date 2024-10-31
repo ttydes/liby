@@ -1,0 +1,39 @@
+#!/bin/sh
+
+tls="../../certs"
+pb="protogen/account.proto"
+port="8000"
+
+create() {
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" \
+        -d '{"operation": "CREATE", "id": "test-id", "fname": "John", "dob": 1990}' localhost:$port accountpb.AccountService/MkAccount
+}
+
+get() {
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" \
+        -d '{"id": "test-id"}' localhost:$port accountpb.AccountService/GetAccount
+}
+
+update() {
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" \
+        -d '{"id": "test-id", "fname": "Jane", "dob": 1995}' localhost:$port accountpb.AccountService/UpdateAccount
+}
+
+delete() {
+    grpcurl -proto "$pb" -cacert "$tls/ca-cert.pem" -cert "$tls/client-cert.pem" -key "$tls/client-key.pem" \
+        -d '{"id": "test-id"}' localhost:$port accountpb.AccountService/DeleteAccount
+}
+
+run() {
+    setenvs
+    go run server.go
+}
+
+# Check if a command is provided
+if [ -z "$1" ]; then
+    echo "Usage: $0 {create|get|update|delete|run}"
+    exit 1
+fi
+
+# Execute the command
+"$@"

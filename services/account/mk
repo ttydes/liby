@@ -15,11 +15,34 @@ setenvs(){
     export DB_PASS=pass
     export DB_HOST=localhost:5432
     export DB_NAME=lms_accounts
+    export DB_PORT=5432
+    export DB_STRING="postgresql://tydes:pass@localhost:5432/lms_accounts"
+}
+
+hit(){
+    grpcurl -proto ./protogen/account.proto -cacert path/to/ca-cert.pem -cert path/to/client-cert.pem -key path/to/client-key.pem -d '{"operation": "CREATE", "id": "test-id", "fname": "John", "dob": 1990}' localhost:50051 accountpb.AccountService/MkAccount
+}
+
+dbinit() {
+    setenvs
+
+    psql "$DB_STRING" <<EOF
+    -- Create the accounts table
+    CREATE TABLE IF NOT EXISTS accounts (
+        id TEXT PRIMARY KEY,
+        fname TEXT NOT NULL,
+        dob INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Grant necessary permissions
+    GRANT CREATE ON SCHEMA public TO "$DB_USER";
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "$DB_USER";
+EOF
 }
 
 run(){
-    setenvs
     go run server.go
 }
-
+setenvs
 $1
