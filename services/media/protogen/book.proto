@@ -1,0 +1,57 @@
+syntax = "proto3";
+package bookpb;
+option go_package = "./protogen/;bookpb";
+
+message Book {
+    string id = 1;
+    string title = 2;
+    string author = 3;
+    int32 year = 4;
+    string isbn = 5;
+}
+
+message CreateBookReq {
+    Book book = 1;
+}
+
+message CreateBookResp {
+    string id = 1;
+}
+
+message GetBookReq {
+    string id = 1;
+}
+
+message GetBookResp {
+    Book book = 1;
+}
+
+message UpdateBookReq {
+    Book book = 1;
+}
+
+message UpdateBookResp {
+    bool success = 1;
+}
+
+message DeleteBookReq {
+    string id = 1;
+}
+
+message DeleteBookResp {
+    bool success = 1;
+}
+
+message ListBooksReq {}
+
+message ListBooksResp {
+    repeated Book books = 1;
+}
+
+service BookService {
+    rpc CreateBook (CreateBookReq) returns (CreateBookResp);
+    rpc GetBook (GetBookReq) returns (GetBookResp);
+    rpc UpdateBook (UpdateBookReq) returns (UpdateBookResp);
+    rpc DeleteBook (DeleteBookReq) returns (DeleteBookResp);
+    rpc ListBooks (ListBooksReq) returns (ListBooksResp);
+}

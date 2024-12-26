@@ -7,16 +7,16 @@ deps(){
 }
 
 proto(){
-    protoc --go_out=. --go-grpc_out=. ./protogen/branch.proto
+    protoc --go_out=. --go-grpc_out=. ./protogen/book.proto
 }
 
 setenvs(){
     export DB_USER=tydes
     export DB_PASS=pass
     export DB_HOST=localhost:5432
-    export DB_NAME=lms_branches
+    export DB_NAME=lms_books
     export DB_PORT=5432
-    export DB_STRING="postgresql://tydes:pass@localhost:5432/lms_branches"
+    export DB_STRING="postgresql://tydes:pass@localhost:5432/lms_books"
 }
 
 hit(){
@@ -27,7 +27,7 @@ hit(){
 }
 
 dbquery(){
-    psql lms_branch
+    psql lms_books
 }
 
 dbinit() {
