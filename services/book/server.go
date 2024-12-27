@@ -2,79 +2,72 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/credentials"
 
-	bookpb "github.com/ttydes/liby/protogen/go/bookpb"
+	db "github.com/ttydes/liby/services/book/db"
+	pb "github.com/ttydes/liby/services/book/protogen"
 )
 
-type Book struct {
-	bookpb.UnimplementedBookServiceServer
-	// books map[string]*book.Book
+type server struct {
+	pb.UnimplementedBookServiceServer
+	db *pgxpool.Pool
 }
 
-func (b *Book) CreateBook(ctx context.Context, req *bookpb.CreateBookReq) (*bookpb.CreateBookResp, error) {
-	book := req.GetBook()
-	if book.Id == "" {
-		book.Id = generateID() // Implement generateID() to generate a unique ID
-	}
-	b.books[book.Id] = book
-	return &book.CreateBookResp{Id: book.Id}, nil
+var port = flag.Int("port", 8002, "the port to serve on")
+
+func (s *server) MkBranch(ctx context.Context, req *pb.MkBookReq) (*pb.MkBranchResp, error) {
+	return db.MkBranch(ctx, s.db, req)
 }
 
-func (b *Book) GetBook(ctx context.Context, req *book.GetBookReq) (*book.GetBookResp, error) {
-	book, exists := b.books[req.GetId()]
-	if !exists {
-		return nil, grpc.Errorf(grpc.Code(grpc.NotFound), "Book not found")
-	}
-	return &book.GetBookResp{Book: book}, nil
+func (s *server) GetBranch(ctx context.Context, req *pb.GetBranchReq) (*pb.GetBranchResp, error) {
+	return db.GetBranch(ctx, s.db, req)
 }
 
-func (b *Book) UpdateBook(ctx context.Context, req *book.UpdateBookReq) (*book.UpdateBookResp, error) {
-	book := req.GetBook()
-	if _, exists := b.books[book.Id]; !exists {
-		return nil, grpc.Errorf(grpc.Code(grpc.NotFound), "Book not found")
-	}
-	b.books[book.Id] = book
-	return &book.UpdateBookResp{Success: true}, nil
+func (s *server) UpdateBranch(ctx context.Context, req *pb.UpdateBranchReq) (*pb.UpdateBranchResp, error) {
+	return db.UpdateBranch(ctx, s.db, req)
 }
 
-func (b *Book) DeleteBook(ctx context.Context, req *pb_book.DeleteBookReq) (*pb_book.DeleteBookResp, error) {
-	id := req.GetId()
-	if _, exists := b.books[id]; !exists {
-		return nil, grpc.Errorf(grpc.Code(grpc.NotFound), "Book not found")
-	}
-	delete(b.books, id)
-	return &pb_book.DeleteBookResp{Success: true}, nil
-}
-
-func (b *Book) ListBooks(ctx context.Context, req *pb_book.ListBooksReq) (*pb_book.ListBooksResp, error) {
-	var books []*pb_book.Book
-	for _, book := range b.books {
-		books = append(books, book)
-	}
-	return &pb_book.ListBooksResp{Books: books}, nil
-}
-
-func generateID() string {
-	return "unique-id"
+func (s *server) DeleteBranch(ctx context.Context, req *pb.DeleteBranchReq) (*pb.DeleteBranchResp, error) {
+	return db.DeleteBranch(ctx, s.db, req)
 }
 
 func main() {
-	lis, err := net.Listen("tcp", ":7777")
+	ctx := context.Background()
+	flag.Parse()
+
+	// Make connection to db
+	dbConn, err := db.MkClient(ctx)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	s := grpc.NewServer()
-	pb_book.RegisterBookServiceServer(s, &Book{books: make(map[string]*pb_book.Book)})
-	reflection.Register(s)
-	log.Println("Starting gRPC server on port 7777...")
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+	defer dbConn.Close()
+
+	// Open a tcp socket
+	sock, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+
+	// Load TLS certificates so browsers don't complain about insecure site.
+	creds, err := credentials.NewServerTLSFromFile("../../certs/server-cert.pem", "../../certs/server-key.pem")
+	if err != nil {
+		log.Fatalf("Failed to create credentials: %v", err)
+	}
+
+	// Initialize the server struct with the database connection
+	srv := grpc.NewServer(grpc.Creds(creds))
+	pb.RegisterBranchServiceServer(srv, &server{db: dbConn})
+
+	// Start the server on the port defined earlier.
+	log.Printf("Starting gRPC server on port %d...", *port)
+	if err := srv.Serve(sock); err != nil {
+		log.Fatalf("Failed to serve: %v", err)
 	}
 }

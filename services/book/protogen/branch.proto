@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package branchpb;
+option go_package = "./protogen/;branchpb";
+
+message MkBranchReq {
+        string name = 1;
+        string address = 2;
+        string city = 3;
+        string postcode = 4;
+        string country = 5;
+}
+
+message Branch {
+        int32  id = 1;
+        string name = 2;
+        string address = 3;
+        string city = 4;
+        string postcode = 5;
+        string country = 6;
+}
+
+message MkBranchResp {
+        bool success = 1;
+        string message = 2;
+}
+
+message GetBranchReq {
+        int32 id = 1;
+}
+
+message GetBranchResp {
+        Branch branch = 1;
+}
+
+message UpdateBranchReq {
+        int32  id = 1;
+        string name = 2;
+        string address = 3;
+        string city = 4;
+        string postcode = 5;
+        string country = 6;
+}
+
+message UpdateBranchResp {
+        bool success = 1;
+        string message = 2;
+}
+
+message DeleteBranchReq {
+        int32 id = 1;
+}
+
+message DeleteBranchResp {
+        bool success = 1;
+        string message = 2;
+}
+
+service BranchService {
+    rpc MkBranch(MkBranchReq) returns (MkBranchResp) {};
+    rpc GetBranch(GetBranchReq) returns (GetBranchResp) {};
+    rpc UpdateBranch(UpdateBranchReq) returns (UpdateBranchResp) {};
+    rpc DeleteBranch(DeleteBranchReq) returns (DeleteBranchResp) {};
+}
