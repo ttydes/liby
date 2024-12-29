@@ -26,19 +26,19 @@ message GetBookResp {
     Book book = 1;
 }
 
-message UpdBookReq {
+message UpdateBookReq {
     Book book = 1;
 }
 
-message UpdBookResp {
+message UpdateBookResp {
     bool success = 1;
 }
 
-message DelBookReq {
+message DeleteBookReq {
     string id = 1;
 }
 
-message DelBookResp {
+message DeleteBookResp {
     bool success = 1;
 }
 
@@ -49,9 +49,9 @@ message ListBooksResp {
 }
 
 service BookService {
-    rpc MkBook  (MkBookReq) returns (MkBookResp);
-    rpc GetBook (GetBookReq) returns (GetBookResp);
-    rpc UpdBook (UpdBookReq) returns (UpdBookResp);
-    rpc DelBook (DelBookReq) returns (DelBookResp);
-    rpc ListBooks (ListBooksReq) returns (ListBooksResp);
+    rpc MkBook     (MkBookReq)     returns (MkBookResp);
+    rpc GetBook    (GetBookReq)    returns (GetBookResp);
+    rpc UpdateBook (UpdateBookReq) returns (UpdateBookResp);
+    rpc DeleteBook (DeleteBookReq) returns (DeleteBookResp);
+    rpc ListBooks  (ListBooksReq)  returns (ListBooksResp);
 }
