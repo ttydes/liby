@@ -11,7 +11,11 @@ message Book {
 }
 
 message MkBookReq {
-    Book book = 1;
+    string title = 1;
+    string author = 2;
+    int32 year = 3;
+    string isbn = 4;
+
 }
 
 message MkBookResp {
